@@ -64,7 +64,7 @@ regs_name <- c('LASSO outcome and propensity', "LASSO outcome and Ridge propensi
 regs_name_latex <- lapply(regs_name, function(s){paste('\\multicolumn{5}{c}{', s, '}')} )
 rmse_tables <- list(NA, NA, NA, NA)
 bias_var_plots <- list(NA, NA, NA, NA)
-file_names_plots <- lapply(regs, function(s){paste("results_simulated_setting4_", s, "_iters100_times1_fullalphasetTRUE.RData")})
+file_names_plots <- lapply(regs, function(s){paste("results_simulated_oracle_setting4_", s, "_iters100_times1_fullalphasetTRUE.RData")})
 
 for (idx in c(1:4)){
 
@@ -76,7 +76,7 @@ for (idx in c(1:4)){
 
 
   results_files  <- results_files[grepl(reg, results_files)]
-  file_matches <- results_files[grepl("simulated", results_files)]
+  file_matches <- results_files[grepl("simulated_oracle", results_files)]
   file_matches <- file_matches[grepl(".RData", file_matches)]
 
 
@@ -132,7 +132,7 @@ for (idx in c(1:4)){
   file_name <- file_names_plots[idx]
   file_name
   file_path <- paste0(results_dir, "/", file_name)
-  
+
 
   METHODS <- c("AIPW", "AIPW_d", "IPW", "IPW_d", "Regression", "Regression_d")
   results_array <- results_array[, METHODS, ]
@@ -192,8 +192,8 @@ final <- plot_grid(
   bias_var_plots[[4]],
   ncol = 1,
   align = "v",
-  axis = "l", 
+  axis = "l",
   rel_heights = c(1,1,1,1)
 )
 
-ggsave("combined_plot.pdf", final, width = 7, height = 12)
+ggsave("combined_plot_oracle.pdf", final, width = 7, height = 12)
