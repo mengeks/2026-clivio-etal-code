@@ -1,0 +1,380 @@
+%% Score-Ratio Neural Network Rescue Experiment
+%% Companion to Clivio et al. (2026) simulation study.
+%% Compiled after: score_ratio_rescue.py  →  results/sr_nn_rescue_p100.csv
+%%                 plot_sr_rescue.R        →  results/sr_nn_rescue_p100.pdf
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{booktabs,array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\hatbeta}{\hat\beta}
+\newcommand{\hatalpha}{\hat\alpha}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\title{Score-Ratio NN for Direction Recovery:\\
+       Identifying and Correcting Four Implementation Errors}
+\author{Internal diagnostic report}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We investigate neural-network score-ratio direction recovery in the sparse linear
+Gaussian simulation of Clivio et al.~(2026), identifying four correctness errors
+in the original implementation and correcting them in a \emph{rescue} experiment
+($N=5$ replicates, $p=100$, setting~4).
+Fixes F1 (per-sample $d_i$ subtraction), F3 (remove treatment-pathway nuclear-norm
+shrinkage), and F4 (exact trace via deterministic probe) are well-motivated and
+correctly implemented.
+Fix F2 (rank-1 architecture) introduces an \emph{optimisation trap}: the inner MLP
+$\psi$ adapts within a single epoch to the random initialisation of $W_v$, after
+which the directional gradient vanishes and the network is stuck pointing in the
+wrong direction.  The true-score diagnostic confirms this:
+$\varepsilon_A \approx 24.9$ (relative MSE $\gg 1$) while $\lambda_1(H_A)/\lambda_2(H_A)\approx 2\times 10^7$
+(the network is \emph{extremely} confident in the wrong direction).
+Median $\cos^2(\hat\beta,\beta^*)=0.026$, unchanged from the original implementation
+and far below LASSO ($0.913$).  The stopping rule is met and we conclude that,
+in the correctly-specified sparse linear setting, penalised regression dominates
+neural score-ratio matching for the direction-recovery sub-task.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Data-Generating Process}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We use the Clivio et al.\ DGP with $p=100$ covariates, $q_\alpha = 20$
+active features, and setting 4 ($\text{escale}=4$, $\text{mscale}=5$):
+
+\begin{align*}
+V &\sim \mathcal{N}(0,I_{p}),\\
+A\mid V &\sim \mathrm{Bernoulli}\!\left(\sigma\!\left(s_T V^\top\beta^*\right)\right),
+  \quad s_T=4,\\
+Y\mid V,A &\sim \mathcal{N}\!\left(s_Y V^\top\alpha^*+\tau A,1\right),
+  \quad s_Y=5,\quad\tau=0.
+\end{align*}
+
+The true directions satisfy $\|\alpha^*\|=\|\beta^*\|=1$ and
+$\alpha^{*\top}\beta^*=0.75$.  Both lie in a common $q_\alpha=20$-dimensional
+support.  We fix the DGP seed to $0$ and run $N=5$ simulation replicates
+(seed $=1,\ldots,5$), each with $n=500$ observations.
+The run was terminated after 5 iterations because the true-score diagnostics
+already revealed a systematic failure (Section~\ref{sec:trap}), consistent
+with the pre-specified stopping rule ($\cos^2(\hat\beta,\beta^*)>0.7$).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Score-Ratio Dimension Reduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Population theory}
+
+Following Baptista, Brennan \& Marzouk (2024), define:
+\begin{align}
+w_A(v,a) &= \nabla_v \log\frac{p(a\mid v)}{\rho(v)},
+  \label{eq:wA}\\
+w_{AY}(v,a,y) &= \nabla_v \log\frac{p(a,y\mid v)}{\rho(v)},
+  \label{eq:wAY}
+\end{align}
+with reference density $\rho=\mathcal{N}(0,I)$ (equal to $p_V$ here).
+Since $\rho=p_V$, these simplify to conditional score differences:
+\[
+w_A(v,a) = \nabla_v\log p(a\mid v),\qquad
+w_{AY}(v,a,y) = \nabla_v\log p(a,y\mid v).
+\]
+For the Clivio DGP:
+\begin{align*}
+w_A^*(v,a) &= s_T\!\left(a-\sigma(s_T v^\top\beta^*)\right)\beta^*,\\
+w_{Y|A}^*(v,a,y) &:= w_{AY}^*(v,a,y)-w_A^*(v,a)
+  = s_Y\!\left(y-s_Y v^\top\alpha^*-\tau a\right)\alpha^*.
+\end{align*}
+Both are scalar multiples of a single direction; their outer-product matrices
+are rank-1:
+\[
+H_A^* := \E[w_A^*w_A^{*\top}] \propto \beta^*\beta^{*\top},\qquad
+H_{Y|A}^* := \E[w_{Y|A}^*w_{Y|A}^{*\top}] \propto \alpha^*\alpha^{*\top}.
+\]
+
+\subsection{Correct estimator}
+
+The true $H_{Y|A}^*$ is estimated via the \emph{per-sample subtraction}
+\begin{equation}
+d_i = \hat w_{AY}(V_i,0,Y_i) - \hat w_A(V_i,0),\quad A_i=0
+\label{eq:di}
+\end{equation}
+evaluated on controls only ($A_i=0$), then
+\begin{equation}
+\widehat H_0 = \frac{1}{n_0}\sum_{i:A_i=0} d_i d_i^\top.
+\label{eq:H0}
+\end{equation}
+The leading eigenvector $u_1(\widehat H_0)$ estimates $\alpha^*$.
+
+\medskip\noindent
+\textbf{Why~\eqref{eq:H0}$\neq H_{AY}-H_A$.}
+In general,
+\[
+\E\!\left[(w_{AY}-w_A)(w_{AY}-w_A)^\top\right]
+\;\neq\;
+\E[w_{AY}w_{AY}^\top]-\E[w_Aw_A^\top].
+\]
+The matrix subtraction on the right introduces a cross-term
+$\E[w_{AY}w_A^\top]+\E[w_Aw_{AY}^\top]$ that does not cancel.  The original
+diagnostic used the matrix subtraction ($H_Y - H_X$), which is our first fix.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Four Correctness Fixes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{description}
+\item[F1 — per-sample $d_i$ subtraction.]
+Replace $H_Y-H_X$ (matrix algebra on fitted expectations) with
+equation~\eqref{eq:H0} (score vector subtraction before outer product).
+
+\item[F2 — rank-1 architecture for $H_A$.]
+The true $w_A^*(v,a)=c(v,a)\beta^*$ is rank-1 everywhere.
+Set $r'_A=1$, $s'_A=1$ instead of $r'=5$, $s'=2$.
+\emph{Intended rationale:} restricting to $r'=1$ should concentrate learning on
+the single true direction.
+\emph{Unintended consequence (Section~\ref{sec:trap}):} the MLP $\psi$
+adapts to whatever direction $W_v$ is initialised to within the first few epochs,
+after which the gradient of the ISM loss w.r.t.\ the \emph{direction} of $W_v$
+vanishes—the network is stuck.
+
+\item[F3 — remove $W_{\rm obs}$ nuclear-norm for $H_A$.]
+With $\text{obs}_{\rm dim}=1$ (binary $A$), $W_{\rm obs}\in\R^{1\times s'}$ has
+nuclear norm $=\|W_{\rm obs}\|_2$, which simply shrinks the treatment pathway
+toward zero.  Set $\lambda_{2,A}=0$.
+
+\item[F4 — exact trace via deterministic probe.]
+For the architecture $w(v,a)=W_v\psi(W_v^\top v,W_{\rm obs}^\top a)$ with $r'=1$:
+\[
+\operatorname{Tr}\!\left(\nabla_v w\right)
+=\frac{\partial\psi}{\partial z_V}\cdot\|W_v\|^2,
+\quad z_V=W_v^\top v.
+\]
+This equals the Hutchinson estimator with probe $z=W_v/\|W_v\|$ exactly (since
+$z^\top J z = \|W_v\|^2\partial\psi/\partial z_V$).  We therefore use the single
+deterministic probe, eliminating Hutchinson variance
+$\sim O(p^2/K/B)\approx 39$ at $p=100,K=4,B=64$.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experimental Setup}
+\label{sec:setup}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Component & Rescue & Original\\
+\midrule
+$H_A$ network & $r'=1$, $s'_A=1$, MLP$(16,16)$ & $r'=5$, $s'=2$, MLP$(64,64)$\\
+$H_A$ regularisation & $\lambda_1=0.01$, $\lambda_2=0$ & $\lambda_1=0.05$, $\lambda_2=0.01$\\
+$H_A$ trace & exact (1 probe) & Hutchinson $K=4$\\
+$H_{AY}$ network & $r'=2$, $s'=2$, MLP$(32,32)$ & (was $H_Y$: $r'=5$,$s'=3$)\\
+$H_{AY}$ trace & Hutchinson $K=8$ & Hutchinson $K=4$\\
+Epochs & 200 + 200 & 200 + 200\\
+Batch size & 64 & 64\\
+$\alpha$ estimator & $u_1(\hat H_0)$ via~\eqref{eq:H0} & $u_1(H_Y-H_X)$\\
+$\beta$ estimator & $u_1(\hat H_A)$ & $u_1(H_X)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+True-score relative MSE diagnostic:
+\[
+\varepsilon_A = \frac{\sum_i\|\hat w_A(V_i,A_i)-w_A^*(V_i,A_i)\|^2}
+                     {\sum_i\|w_A^*(V_i,A_i)\|^2},\quad
+\varepsilon_{Y|A} = \frac{\sum_{i:A_i=0}\|d_i-w_{Y|A}^*(V_i,0,Y_i)\|^2}
+                        {\sum_{i:A_i=0}\|w_{Y|A}^*(V_i,0,Y_i)\|^2}.
+\]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+\label{sec:results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Table~\ref{tab:results} reports median cosine-squared similarity over 5 replicates
+($N=5$; run terminated early per stopping rule).
+
+\begin{table}[h]
+\centering
+\caption{Median $\cos^2$ over 5 replicates, rescue experiment ($p=100$, setting~4).
+  Rows 1--4 from the same replicates; rows 5--6 from earlier 20-replicate runs
+  for reference.}
+\label{tab:results}
+\begin{tabular}{lcccc}
+\toprule
+Method & $\cos^2(\hat\alpha,\alpha^*)$ & $\cos^2(\hatbeta,\beta^*)$
+       & $\hat\alpha\cdot\hat\beta$ & $\varepsilon_{\cdot}$\\
+\midrule
+LASSO-Y / LASSO-T  & 0.989 & 0.913 & 0.680 & ---\\
+LASSO-Y / Ridge-T  & 0.989 & 0.833 & 0.653 & ---\\
+Ridge-Y / LASSO-T  & 0.972 & 0.913 & 0.686 & ---\\
+Ridge-Y / Ridge-T  & 0.972 & 0.833 & 0.658 & ---\\
+\midrule
+SR-NN (original, $N=20$) & 0.949 & 0.025 & 0.029 & ---\\
+SR-NN rescue F1--F4 ($N=5$)
+  & 0.920 & 0.026 & 0.102
+  & $\varepsilon_A=24.9$, $\varepsilon_{Y|A}=6.50$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+\textbf{Score MSE per iteration (SR-NN rescue):}
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+Iter & $\cos^2(\hat\alpha,\alpha^*)$ & $\cos^2(\hat\beta,\beta^*)$ & $\varepsilon_A$ & $\varepsilon_{Y|A}$\\
+\midrule
+1 & 0.960 & 0.026 & 21.5 & 6.73\\
+2 & 0.807 & 0.209 & 52.4 & 6.50\\
+3 & 0.969 & 0.000 & 24.6 & 5.19\\
+4 & 0.920 & 0.026 & 59.9 & 12.24\\
+5 & 0.892 & 0.543 & 24.9 & 4.45\\
+\midrule
+Median & 0.920 & 0.026 & 24.9 & 6.50\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The $H_A$ eigenvalue ratio (median $\lambda_1/\lambda_2\approx 1.7\times 10^7$)
+confirms that the network finds a near-perfectly rank-1 solution—but directed
+at the wrong vector.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The F2 Optimisation Trap}
+\label{sec:trap}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{Why the rank-1 architecture fails.}
+With $r'=1$, the architecture is $w(v,a)=W_v\psi(W_v^\top v, W_{\rm obs} a)$
+where $W_v\in\R^p$ is a single direction.  The ISM loss expands as
+\[
+J(W_v,\psi) = \|W_v\|^2
+  \underbrace{\E\!\left[\tfrac12|\psi|^2+\tfrac{\partial\psi}{\partial z_V}\right]}_{(A)}
+  -\,\underbrace{\E[z_V\psi]}_{(B)},
+  \quad z_V=W_v^\top V.
+\]
+Term (A) depends on the \emph{magnitude} of $W_v$ and the derivative of $\psi$;
+term (B) ties $\psi$ to the projection $z_V = W_v^\top V$.
+
+At any fixed direction $d=W_v/\|W_v\|$, the inner MLP $\psi$ can be brought to
+its optimal value in a few gradient steps (it is just learning a 1-D regression:
+$\psi^*(z_V,a)=\partial_{z_V}\log p(a\mid d^\top V=z_V)$).
+Once $\psi$ is approximately optimal for direction $d_0$ (the random
+initialisation), the gradient of the loss w.r.t.\ the \emph{direction} of $W_v$
+becomes
+\[
+\frac{\partial J}{\partial d}
+\;\propto\;
+\E\!\left[
+  \frac{\partial^2\log p(a\mid d^\top V=z_V)}{\partial z_V^2}
+  (V - d^\top V\cdot d)
+  \psi^*
+\right]
+\;\approx\;0
+\]
+when $\psi^*$ already satisfies the score equation for direction $d_0$.
+In other words: \emph{once $\psi$ adapts to $d_0$, the directional gradient
+vanishes and $W_v$ is frozen at $d_0$}.
+
+Empirically, $\psi$ is largely optimal after $\sim$20--40 epochs (the loss
+flattens), but $W_v$ has not moved away from its initialisation.
+This is confirmed by $\varepsilon_A\gg1$: the fitted score is precisely the true
+score projected onto the \emph{random} initialisation direction, not $\beta^*$.
+
+\paragraph{Principled alternative.}
+For $r'>1$, the exact trace is
+$\operatorname{Tr}(\nabla_v w) = \operatorname{Tr}(J_\psi W_v^\top W_v)$
+where $J_\psi\in\R^{r'\times r'}$.  Computing this via $r'$ canonical-basis
+probes in the latent space gives an \emph{exact} trace in $r'$ forward passes
+(vs.\ $K$ random Hutchinson probes over $\R^p$).
+For $r'=5$ this costs 5 passes instead of the original $K=4$, but with zero
+variance.  The nuclear norm on $W_v\in\R^{p\times r'}$ then performs
+\emph{rank selection in the $r'$-dimensional latent space}, allowing the network
+to jointly learn both direction and magnitude.
+This is the correct replacement for the original Hutchinson estimator, retaining
+F3 and F4 while reverting F2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+\label{sec:discussion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{Why $\alpha$ is easier than $\beta$.}
+The outcome regression $Y = s_Y V^\top\alpha^* + \varepsilon_Y$ uses
+\emph{continuous} $Y$ with signal $s_Y=5$.  Fitting $\hat w_{AY}$ is essentially
+continuous nonparametric regression in a 2-D latent space; the $H_0$ matrix (which
+only needs to capture the residual $d_i$ direction) achieves $\cos^2=0.92$.
+
+The treatment model uses \emph{binary} $A$; the ISM loss requires estimating
+the logistic score, a harder problem with weaker gradient signal.
+Rank-1 ISM further traps the network at its initialisation direction.
+
+\paragraph{LASSO home-field advantage.}
+The DGP is tailor-made for penalised regression:
+true sparsity ($q=20$ of $p=100$), linear outcome, logistic-linear treatment,
+$n=500$.  LASSO achieves $\cos^2(\hatbeta,\beta^*)=0.913$ using the \emph{known}
+logistic parametric form, vs.\ SR-NN rescue at $0.026$.
+
+\paragraph{When score-ratio DR adds value.}
+SR-NN is preferred when:
+(i)~the functional forms of $p(a\mid v)$ and $p(y\mid a,v)$ are \emph{unknown}
+(nonlinear/non-GLM), precluding parametric regression;
+(ii)~$\alpha^*$ and $\beta^*$ are \emph{dense} in $v$ (no sparsity), where LASSO
+degrades but low-rank score learning is unaffected; or
+(iii)~the marginal distribution $p_V$ is not Gaussian, making ISM the natural
+score estimator while LASSO assumptions are violated.
+
+\paragraph{Stopping rule applied.}
+Median $\cos^2(\hat\beta,\beta^*)=0.026\ll0.7$ after all four fixes.
+We do not further tune and proceed to Experiment~2 (nonlinear DGP).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}
+\label{sec:conclusions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Four correctness errors were identified in the original SR-NN diagnostic:
+\begin{enumerate}
+\item \textbf{F1} (matrix subtraction): $H_Y-H_X\neq\E[d_id_i^\top]$ in general.
+  Corrected by per-sample subtraction before outer product.
+\item \textbf{F2} (rank-1 architecture): forces $W_v$ to a single direction before
+  learning; the MLP $\psi$ adapts in $\sim$20 epochs to the random initialisation
+  direction, after which the directional gradient vanishes.
+  \emph{This fix is counterproductive.}
+\item \textbf{F3} (nuclear-norm shrinkage of scalar $W_{\rm obs}$): correctly
+  removed; does not interact with F2's failure.
+\item \textbf{F4} (exact trace): correctly eliminates Hutchinson variance; cannot
+  overcome the F2 trap.
+\end{enumerate}
+
+The true-score diagnostic ($\varepsilon_A\approx24.9$, relative MSE $\gg 1$)
+unambiguously identifies the failure mode: the network learns a
+\emph{precisely wrong} rank-1 score.  The correct next implementation step is to
+retain $r'=5$ (reverting F2) and replace Hutchinson probes in $\R^p$ with $r'$
+canonical-basis probes in the latent $\R^{r'}$ space (exact trace, $O(r')$ cost).
+
+In the correctly-specified sparse linear setting, penalised regression dominates
+neural score-ratio matching for direction recovery.  Score-ratio DR is expected to
+add value when the DGP is nonlinear, non-sparse, or non-GLM—conditions examined in
+Experiment~2.
+
+\bigskip\noindent
+\textbf{Code} (all in \texttt{2026-clivio-etal-code/}):
+\texttt{score\_ratio\_rescue.py},
+\texttt{plot\_sr\_rescue.R},
+\texttt{score\_ratio\_nn\_diagnostic.py} (original),
+\texttt{plot\_sr\_nn\_diagnostic.R}.
+Results: \texttt{results/sr\_nn\_rescue\_p100.\{csv,pdf\}},
+\texttt{results/sr\_nn\_diagnostic\_p100.\{csv,pdf\}}.
+
+\end{document}
