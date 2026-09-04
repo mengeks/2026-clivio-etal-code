@@ -1,5 +1,9 @@
 """
-Neural-network score-ratio dimension reduction diagnostic.
+Neural-network score-ratio dimension reduction diagnostic (p=100 DGP).
+
+DGP: same as oracle_utils.R gen_dataset("simulated", setting, iter)
+but with p=100 (20 active features, same 20% sparsity ratio).
+p=100 keeps Hutchinson trace variance tractable on CPU (variance ~ p^2).
 
 For each of N_ITERS simulated datasets (setting 4):
   - Fit H_X  via ISM on (V, A)      → top eigvec ≈ beta
@@ -7,7 +11,7 @@ For each of N_ITERS simulated datasets (setting 4):
   - H_YA = H_Y - H_X               → top eigvec ≈ alpha
 
 Compare to LASSO/Ridge (sklearn) on the same data.
-Saves results/sr_nn_diagnostic.csv.
+Saves results/sr_nn_diagnostic_p100.csv.
 """
 
 import os, sys
@@ -45,9 +49,9 @@ def construct_beta(alpha, ab_dp, rng):
 def gen_simulated(setting, iter_seed, alpha_true, beta_true):
     escale = [1.0, 1.0, 4.0, 4.0][setting - 1]
     mscale = [2.0, 5.0, 2.0, 5.0][setting - 1]
-    n, p, tau = 500, 1000, 0.0
+    n, tau = 500, 0.0
     rng = np.random.default_rng(iter_seed)
-    X = rng.standard_normal((n, p))
+    X = rng.standard_normal((n, len(alpha_true)))
     e = expit(escale * (X @ beta_true))
     T = rng.binomial(1, e)
     Y = mscale * (X @ alpha_true) + tau * T + rng.standard_normal(n)
@@ -100,10 +104,10 @@ def sklearn_directions(X, T, Y, l1_ratio_alpha=1.0, l1_ratio_T=1.0):
 # ---------------------------------------------------------------------------
 
 def sr_nn_directions(X, T, Y,
-                     r_prime=3, s_prime_X=2, s_prime_Y=3,
-                     hidden_units=(32, 32), n_epochs=100,
-                     batch_size=64, lam1_X=0.10, lam1_Y=0.05,
-                     lam2=0.02, n_hutch=2, verbose=True):
+                     r_prime=5, s_prime_X=2, s_prime_Y=3,
+                     hidden_units=(64, 64), n_epochs=200,
+                     batch_size=64, lam1_X=0.05, lam1_Y=0.02,
+                     lam2=0.01, n_hutch=4, verbose=True):
     """
     Fit H_X and H_Y via ISM, compute H_YA = H_Y - H_X.
     Returns:
@@ -165,23 +169,32 @@ def cosine_sq(u, v):
 # Main loop
 # ---------------------------------------------------------------------------
 
+SKLEARN_COMBOS = [
+    dict(l1_alpha=1., l1_T=1., label='LASSO Y / LASSO T'),
+    dict(l1_alpha=1., l1_T=0., label='LASSO Y / Ridge T'),
+    dict(l1_alpha=0., l1_T=1., label='Ridge Y / LASSO T'),
+    dict(l1_alpha=0., l1_T=0., label='Ridge Y / Ridge T'),
+]
+
+
 def main():
     SETTING  = 4
-    N_ITERS  = 10
-    OUT_CSV  = "results/sr_nn_diagnostic.csv"
+    N_ITERS  = 20
+    OUT_CSV  = "results/sr_nn_diagnostic_p100.csv"
     os.makedirs("results", exist_ok=True)
 
-    # True DGP directions
+    # True DGP directions — p=100, 20 active features (same 20% sparsity)
     rng0 = np.random.default_rng(0)
-    qa = 20; p = 1000
+    qa = 20; p = 100
     alpha_true = np.concatenate([rng0.standard_normal(qa) / qa, np.zeros(p - qa)])
     alpha_true /= np.linalg.norm(alpha_true)
     beta_true = construct_beta(alpha_true, 0.75, rng0)
+    print(f"DGP: p={p}, qa={qa}, alpha.beta={alpha_true @ beta_true:.4f}")
 
     rows = []
     for it in range(1, N_ITERS + 1):
         print(f"\n{'='*60}")
-        print(f"Iteration {it}/{N_ITERS}  (setting={SETTING})")
+        print(f"Iteration {it}/{N_ITERS}  (setting={SETTING}, p={p})")
         print('='*60)
 
         X, T, Y = gen_simulated(SETTING, it, alpha_true, beta_true)
@@ -191,7 +204,6 @@ def main():
         a_sr, b_sr, eigs_X, eigs_Y, eigs_YA = sr_nn_directions(
             X, T, Y, verbose=True)
 
-        # sign-normalise (cosine is squared, so sign doesn't matter for cos²)
         rows.append({
             'iter': it, 'method': 'SR-NN',
             'cos2_alpha': cosine_sq(a_sr, alpha_true),
@@ -203,40 +215,33 @@ def main():
             'eig2_YA': float(eigs_YA[1]) if len(eigs_YA) > 1 else 0.0,
         })
 
-        # --- LASSO Y / LASSO T ---
-        print("[ LASSO Y / LASSO T ]")
-        a_ll, b_ll = sklearn_directions(X, T, Y, l1_ratio_alpha=1., l1_ratio_T=1.)
-        rows.append({'iter': it, 'method': 'LASSO Y / LASSO T',
-                     'cos2_alpha': cosine_sq(a_ll, alpha_true),
-                     'cos2_beta':  cosine_sq(b_ll, beta_true),
-                     'ab_dp':      float(a_ll @ b_ll),
-                     'eig1_X': np.nan, 'eig2_X': np.nan,
-                     'eig1_YA': np.nan, 'eig2_YA': np.nan})
+        # --- LASSO / Ridge combos ---
+        for combo in SKLEARN_COMBOS:
+            print(f"[ {combo['label']} ]")
+            a_hat, b_hat = sklearn_directions(
+                X, T, Y, l1_ratio_alpha=combo['l1_alpha'], l1_ratio_T=combo['l1_T'])
+            rows.append({
+                'iter': it, 'method': combo['label'],
+                'cos2_alpha': cosine_sq(a_hat, alpha_true),
+                'cos2_beta':  cosine_sq(b_hat, beta_true),
+                'ab_dp':      float(a_hat @ b_hat),
+                'eig1_X': np.nan, 'eig2_X': np.nan,
+                'eig1_YA': np.nan, 'eig2_YA': np.nan,
+            })
 
-        # --- Ridge Y / Ridge T ---
-        print("[ Ridge Y / Ridge T ]")
-        a_rr, b_rr = sklearn_directions(X, T, Y, l1_ratio_alpha=0., l1_ratio_T=0.)
-        rows.append({'iter': it, 'method': 'Ridge Y / Ridge T',
-                     'cos2_alpha': cosine_sq(a_rr, alpha_true),
-                     'cos2_beta':  cosine_sq(b_rr, beta_true),
-                     'ab_dp':      float(a_rr @ b_rr),
-                     'eig1_X': np.nan, 'eig2_X': np.nan,
-                     'eig1_YA': np.nan, 'eig2_YA': np.nan})
-
-        df_so_far = pd.DataFrame(rows)
-        df_so_far.to_csv(OUT_CSV, index=False)
-        print(f"\n  [saved {OUT_CSV}]")
+        pd.DataFrame(rows).to_csv(OUT_CSV, index=False)
 
         # Quick per-iter summary
-        for m in ['SR-NN', 'LASSO Y / LASSO T', 'Ridge Y / Ridge T']:
-            r = df_so_far[df_so_far.method == m].iloc[-1]
+        df_now = pd.DataFrame(rows)
+        print()
+        for m in ['SR-NN'] + [c['label'] for c in SKLEARN_COMBOS]:
+            r = df_now[df_now.method == m].iloc[-1]
             print(f"  {m:25s}  cos²(α)={r.cos2_alpha:.3f}  cos²(β)={r.cos2_beta:.3f}")
 
     df = pd.DataFrame(rows)
     df.to_csv(OUT_CSV, index=False)
     print(f"\nFinal results saved to {OUT_CSV}")
 
-    # Summary table
     summary = (df.groupby('method')[['cos2_alpha', 'cos2_beta', 'ab_dp']]
                  .median().round(4))
     print("\nMedian cos² across iterations:")

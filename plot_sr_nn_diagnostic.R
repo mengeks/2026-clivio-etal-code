@@ -9,13 +9,15 @@ library(tidyr)
 library(patchwork)
 library(RColorBrewer)
 
-csv_path <- "results/sr_nn_diagnostic.csv"
+csv_path <- "results/sr_nn_diagnostic_p100.csv"
 if (!file.exists(csv_path)) stop("Run score_ratio_nn_diagnostic.py first.")
 df <- read.csv(csv_path)
 
-method_levels <- c("LASSO Y / LASSO T", "Ridge Y / Ridge T", "SR-NN")
-method_labels <- c("LASSO", "Ridge", "Score-ratio NN")
-cols <- setNames(c(brewer.pal(3, "Set1")[c(1,2)], "#1a9641"), method_levels)
+method_levels <- c("LASSO Y / LASSO T", "LASSO Y / Ridge T",
+                   "Ridge Y / LASSO T", "Ridge Y / Ridge T", "SR-NN")
+method_labels <- c("LASSO Y/LASSO T", "LASSO Y/Ridge T",
+                   "Ridge Y/LASSO T", "Ridge Y/Ridge T", "Score-ratio NN")
+cols <- setNames(c(brewer.pal(4, "Set1"), "#1a9641"), method_levels)
 df$method <- factor(df$method, levels = method_levels, labels = method_labels)
 
 # ---------------------------------------------------------------------------
@@ -87,8 +89,8 @@ final <- (p_alpha | p_beta) / (p_dp | p_eig) +
     subtitle = "Dashed line = oracle/truth.  H_YA = H_Y - H_X isolates alpha direction."
   )
 
-ggsave("results/sr_nn_diagnostic.pdf", final, width = 10, height = 8)
-cat("Saved results/sr_nn_diagnostic.pdf\n")
+ggsave("results/sr_nn_diagnostic_p100.pdf", final, width = 11, height = 8)
+cat("Saved results/sr_nn_diagnostic_p100.pdf\n")
 
 cat("\nMedian cos² per method:\n")
 df %>%
