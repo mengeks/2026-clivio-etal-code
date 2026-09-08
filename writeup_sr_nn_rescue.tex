@@ -368,9 +368,66 @@ neural score-ratio matching for direction recovery.  Score-ratio DR is expected 
 add value when the DGP is nonlinear, non-sparse, or non-GLM—conditions examined in
 Experiment~2.
 
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Addendum: $r'=5$, Exact Latent Trace}
+\label{sec:final}
+
+Following the rescue diagnosis, we implemented the corrected configuration
+specified above: $r'=5$, exact latent trace $\mathrm{Tr}(J_\psi G)$,
+$\lambda_1=\lambda_2=0$, full batch $n=500$, five random initialisations and
+one warm-start ($W_v[:,0]=\beta^*$).
+
+\paragraph{Implementation detail (TF2 limitation).}
+The natural approach---watching $z = V W_v$ inside an inner
+\texttt{GradientTape} and calling \texttt{inner.gradient}($\sum\psi_k$, $z$)---returns
+\texttt{None} when $z$ is derived from a \texttt{tf.Variable} and passed into a
+Keras model call.  TF2 eager mode does not propagate the inner tape through
+\texttt{inner.watch}($z$) in this case.
+
+The fix exploits the identity
+\[
+  \sum_{k=1}^{r'} z_k^\top J_v(w)\, z_k
+  = \mathrm{Tr}\!\bigl(Q^\top W_v J_\psi W_v^\top Q\bigr)
+  = \mathrm{Tr}(R J_\psi R^\top)
+  = \mathrm{Tr}(J_\psi G),
+\]
+where $W_v = QR$ (QR decomposition, $Q\in\R^{p\times r'}$ semi-orthonormal,
+$G=R^\top R = W_v^\top W_v$).  Using $z_k = Q[:,k]$ as \emph{ambient-space}
+probes with \texttt{inner.watch}($V$) gives the exact trace in $r'$ forward
+passes, with no Hutchinson randomness.
+
+\paragraph{Instability with $\lambda=0$.}
+All configurations with $\lambda=0$ exhibited \emph{scale explosion}: the ISM
+loss decreased to $-\infty$ while $\varepsilon_A$ grew to $>10^3$ by epoch~500.
+The root cause is that the $W_v$/$\psi$-scale co-adaptation is unconstrained:
+$W_v$ can be scaled by $c$ and $\psi$ by $c^{-1}$ leaving $w$ unchanged, but
+the trace term $\mathrm{Tr}(J_\psi G)\propto c^{-1}\cdot c^2 = c$ grows
+linearly in $c$.  Adding a small nuclear-norm penalty $\lambda_1=10^{-3}$ on
+$W_v$ slows but does not prevent this instability; larger penalties ($\lambda_1\in\{0.1,0.5,1.0\}$) likewise fail.
+
+\paragraph{Results.}
+Even with the warm-start oracle initialisation $W_v[:,0]=\beta^*$:
+\begin{itemize}
+  \item $\cos^2(\hat\beta,\beta)$ peaks at $0.71$--$0.79$ around epoch 50,
+        then collapses below $0.25$ by epoch 200 as scale explosion dominates.
+  \item Random initialisations never exceed $\cos^2(\hat\beta,\beta)\approx0.04$.
+\end{itemize}
+The stopping rule ($\cos^2(\hat\beta,\beta)>0.7$ at epoch 500) is never met.
+
+\paragraph{Conclusion.}
+The failure is not a trace-estimation issue (exact trace still fails) nor an
+architectural bottleneck (rank-5 fails the same way as rank-1).  It is an
+optimisation landscape issue: in the finite-sample sparse linear setting
+($n=500$, $p=100$), the ISM loss has no reliable basin of attraction around
+$\beta^*$.  Even starting exactly at $\beta^*$, the stochastic gradient moves
+away within 100 epochs.  Penalised regression (LASSO/Ridge) achieves
+$\cos^2(\hat\beta,\beta)>0.8$ on every seed.  \textbf{SR-NN is not competitive
+in this setting.}
+
 \bigskip\noindent
 \textbf{Code} (all in \texttt{2026-clivio-etal-code/}):
 \texttt{score\_ratio\_rescue.py},
+\texttt{score\_ratio\_final.py} (r'=5 exact trace),
 \texttt{plot\_sr\_rescue.R},
 \texttt{score\_ratio\_nn\_diagnostic.py} (original),
 \texttt{plot\_sr\_nn\_diagnostic.R}.
