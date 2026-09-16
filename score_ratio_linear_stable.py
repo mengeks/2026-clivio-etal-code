@@ -24,6 +24,9 @@ os.environ['TF_USE_LEGACY_KERAS'] = '1'
 _here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _here)
 sys.path.insert(0, os.path.dirname(_here))
+_diag_dir = os.path.join(_here, 'score_ratio_linear_diagnosis_and_exploration')
+if os.path.isdir(_diag_dir):
+    sys.path.insert(0, _diag_dir)
 
 import numpy as np
 import pandas as pd
