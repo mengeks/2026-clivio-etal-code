@@ -1,0 +1,11 @@
+neurips_2026.sty
+neurips-wmhs2026_submission-16Sep2026.tex
+__pycache__/
+*.pyc
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+results/bernoulli_run.log
+results/sr_nn_final_p100.csv
