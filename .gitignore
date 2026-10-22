@@ -9,3 +9,5 @@ __pycache__/
 *.pdf
 results/bernoulli_run.log
 results/sr_nn_final_p100.csv
+writeup_sr_nn_experiments.tex
+writeup_sr_linear_diagnosis.tex
