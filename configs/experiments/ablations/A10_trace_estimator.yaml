@@ -1,0 +1,11 @@
+name: A10_trace_estimator
+note: research-notes/A10_trace_estimator.md
+question: >-
+  Exact QR trace vs Hutchinson (K Gaussian probes per sample) in the joint-score
+  ISM objective, used for both training and validation. Every run also records
+  the spread of K-probe estimates at the fitted network (trace_hutch*_sd).
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  exact_qr: {joint: {trace: exact_qr}}
+  hutchinson_k4: {joint: {trace: hutchinson, n_hutch: 4}}
+  hutchinson_k8: {joint: {trace: hutchinson, n_hutch: 8}}

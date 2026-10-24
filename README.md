@@ -1,8 +1,150 @@
-1) Delete all files in `results/`; this folder contains individual runs' results and runs are not re-run if their corresponding results are already saved in the corresponding folder.
-2) In each `bash run_[...].sh` file, in the line `cat "$COMBO_FILE" | parallel --line-buffer -j X --colsep ' ' '`, `X` is the number of parallel threads. Please adapt `X` to your computational resources. WARNING: HC-MNIST can be computationally intensive, thus the default lower value of `X` of 1 in `bash run_hcmnist.sh`.
-3) Run each `bash run_[..].sh` file.
-4) For simulated datasets, retrieve results through `Rscript ProcessResultsSimulated.R`. It prints a tabular given a table of results as in Table 1, and saves a figure as in Figure 2 in `combined_plot.pdf`. For semi-synthetic datasets, retrieve results through `Rscript ProcessResults.R`. It prints a tabular given a table of results as in Table 2. The tabulars can be visualized in LaTeX by defining `\newcommand{\red}[1]{\textcolor{red}{#1}}` and `\newcommand{\green}[1]{\textcolor{teal}{#1}}`.
+# Learning Prognostic Representations via Score-Ratio Dimension Reduction — replication package
 
-Sources: 
-- https://github.com/afranks86/reducer (original code)
-- https://github.com/anndvision/quince (HCMNIST)
+Code and outputs for the manuscript *Learning Prognostic Representations via
+Score-Ratio Dimension Reduction* (NeurIPS 2026 workshop submission). The README
+structure follows the
+[Social Science Data Editors template](https://social-science-data-editors.github.io/template_README/).
+For using the package on your own data, see [INSTALL.md](INSTALL.md).
+
+## Replication in three commands
+
+```bash
+uv sync && source .venv/bin/activate      # setup (or: pip install -e .)
+bash experiments/run_main.sh --fast       # smoke test: 1 seed, 20 epochs
+bash experiments/run_main.sh              # paper results -> outputs/tables/
+```
+
+`bash experiments/run_research_notes.sh` runs the controlled design comparisons
+(A01–A10). `bash experiments/run_exploration.sh` re-runs the historical
+development scripts.
+
+## Data availability and provenance
+
+All score-ratio experiments use simulated data. No external data are needed.
+
+| Data | Generator | Configuration |
+|---|---|---|
+| Linear single-index DGP (Clivio et al. 2026, setting 4): p = 100, n = 500 | `causal_embedding.simulations.dgp.gen_linear` | `configs/experiments/linear_rank1.yaml` |
+| Quadratic single-index DGP: p = 30, n = 500 | `causal_embedding.simulations.dgp.gen_rank1` | `configs/experiments/nonlinear_rank1.yaml` |
+
+`experiments/clivio/` holds the R pipeline of Clivio et al. (2026) with its
+own data: IHDP (`data/ihdp.RData`, public, included), ACIC 2016 (R package
+`aciccomp2016`) and HC-MNIST (downloaded by `torchvision`). See
+`experiments/clivio/README.md`.
+
+Precomputed outputs:
+
+- `outputs/results/<experiment>/results.csv` and `run_info.json` (this version).
+- `outputs/results/legacy/`: the September 2026 runs behind the submitted manuscript.
+- `outputs/results/exploration/`: reruns of the development scripts.
+
+## Computational requirements
+
+- **Software:** Python 3.9 and the packages in `uv.lock` (TensorFlow 2.10.0,
+  NumPy 1.24.2, SciPy 1.11.3, scikit-learn 1.6.1, pandas 2.0.1, PyYAML 6.0).
+  The supported ranges are in `pyproject.toml`. R ≥ 4.2 is needed only for
+  `experiments/clivio/`.
+- **Hardware used:** Rocky Linux 8.10, 2 × Intel Xeon Gold 6130 (64 cores),
+  CPU only, shared with other users.
+- **Runtimes (measured on that machine):**
+
+  | Step | Command | Wall time |
+  |---|---|---|
+  | Smoke test | `bash experiments/run_main.sh --fast` | 3.8 min, cold cache (mostly the linear L1-logistic warm start) |
+  | Paper results (2 datasets × 5 seeds) | `bash experiments/run_main.sh` | 5.3 min, cold cache, 10 workers (baseline fits and imports 4 min, training 1.3 min) |
+  | Research notes, 5 seeds (130 jobs) | `bash experiments/run_research_notes.sh` | ≈ 10–15 min with `JOBS=14` (estimated: 130 jobs × 34 s / 14 workers, plus baseline fits) |
+  | All experiments, seeds 1–20 (520 jobs) | see step 4 below | 23 min with 16 workers × 2 threads (baselines cached) |
+  | Historical scripts | `bash experiments/run_exploration.sh` | 7–40 min each; `rescue` (20 iterations) ≈ 2.5 h |
+
+  One job (one config, one seed) takes a median of 34 s on 2 threads (10–90 %:
+  25–62 s). On a shared NFS machine, starting a worker costs another 1–2 min
+  (TensorFlow import), so workers are reused.
+
+## Instructions
+
+1. **Install.** Use `uv sync`, which installs the exact versions in `uv.lock`,
+   or `python -m venv .venv && .venv/bin/pip install -e .`.
+2. **Paper results.** Run `bash experiments/run_main.sh`. This executes
+   `scripts/run_simulation.py` on both dataset configurations (5 seeds each),
+   then `scripts/make_paper_tables.py`.
+3. **Research notes.** Run `bash experiments/run_research_notes.sh [A03_initialization ...]`.
+   Each file in `configs/experiments/ablations/` changes one setting of the main
+   pipeline per arm.
+4. **Seed robustness.** Run
+   `python scripts/run_simulation.py configs/experiments/*.yaml configs/experiments/ablations/*.yaml --seeds $(seq 1 20) --name-suffix _20seeds`.
+5. **Manuscript.** `neurips-wmhs2026_submission-16Sep2026.tex` (git-ignored)
+   reads its numbers from `outputs/tables/paper_numbers.tex` and its per-seed
+   tables from `outputs/tables/tab_*_seeds.tex`.
+
+Parallelism: set `JOBS` (worker processes, default 10) and `THREADS` (threads
+per worker, default 2) in the environment of the `experiments/*.sh` scripts,
+or use `--jobs` and `--threads`.
+
+Each (resolved configuration, seed) pair is cached in
+`outputs/results/_jobs/<config hash>/seed<k>.json`. Experiments that share an
+arm therefore compute it once, and an interrupted run resumes where it stopped.
+`--force` recomputes.
+
+## Display mapping
+
+| Manuscript display | Content | Output file | Generated by |
+|---|---|---|---|
+| Abstract; §4 "Nonlinear rank-one model" | SR, SAVE, SIR, LASSO medians; seeds above 0.50 | `outputs/tables/paper_numbers.tex` (`\Nl*`) | `scripts/make_paper_tables.py` ← `outputs/results/nonlinear_rank1/results.csv` |
+| §4 random-initialisation failure | SR from a random warm start | `paper_numbers.tex` (`\NlRandom*`) | ← `outputs/results/A03_initialization/results.csv` |
+| §4 "Canonical linear single-index model" | SR and LASSO medians; seeds above 0.70 | `paper_numbers.tex` (`\Lin*`) | ← `outputs/results/linear_rank1/results.csv` |
+| App. B, initialisation paragraph | LASSO warm-start median | `paper_numbers.tex` (`\LinInitBetaMed`) | ← `outputs/results/linear_rank1/results.csv` |
+| App. B, treatment-objective paragraph | Bernoulli-ISM history (0.81, ε_A ≈ 150) | `outputs/results/legacy/sr_nn_bernoulli_p100.csv` | `scripts/exploration/score_ratio_bernoulli.py` |
+| App. C "Per-seed results", Tables `tab:linear_rank1_seeds`, `tab:nonlinear_rank1_seeds` | per-seed squared cosines | `outputs/tables/tab_linear_rank1_seeds.tex`, `tab_nonlinear_rank1_seeds.tex` | `scripts/make_paper_tables.py` |
+| Research notes A01–A10 (not in the manuscript) | controlled comparisons | `outputs/tables/ablations.md`, `ablations.csv` | `scripts/make_paper_tables.py` ← `outputs/results/A*/results.csv` |
+
+`scripts/run_simulation.py` produces every `results.csv`. Each one comes with a
+`run_info.json` that holds the resolved configuration and its hash, the seeds,
+the git revision, the software environment, the runtime and the medians.
+
+## Verification
+
+- **Deterministic quantities**: the simulated data, the SAVE/SIR/LASSO
+  directions and the warm starts are exact. For example, the median LASSO warm
+  start in the linear DGP is cos² = 0.913, identical to the September 2026 run.
+- **Network training** is seeded (global NumPy and TensorFlow seed = data seed,
+  op determinism on). It repeats exactly on the same machine and thread count:
+  an independent cold-cache rerun of `run_main.sh` reproduced
+  `outputs/results/{linear,nonlinear}_rank1/results.csv` with maximum absolute
+  difference 0.
+  Other hardware, thread counts or TensorFlow versions change the
+  floating-point order and hence the early-stopping epochs.
+- **The September 2026 runs** (`outputs/results/legacy/`) did not seed
+  TensorFlow or the mini-batch order. Per-seed values are therefore not
+  reproducible, and five-seed medians vary between reruns by several hundredths.
+  `outputs/tables/replication_check.md` compares the original CSVs, this
+  package and the original scripts rerun on this machine.
+  On this machine, 5-seed medians differ from the original by up to 0.04
+  (linear β 0.787 vs 0.824; nonlinear α 0.947 vs 0.967). With seeds 1–20 they
+  are 0.803 and 0.955. The nonlinear "all seeds above 0.50" statement does not
+  hold for every seed (seeds 4 and 15 of 20 fail; seed 4 has a poor SAVE warm
+  start). See `work-journal.tex` (replication section) and `research-notes/`.
+- **Thread-count sensitivity**: on nonlinear seed 3, LassoCV sits on the
+  zero-coefficient boundary. With the default BLAS threads it returns all zeros
+  (fixed fallback direction, cos² 0.250); with 2 threads it returns a tiny
+  non-zero vector (cos² 0.000). The pipeline always uses `--threads` (default
+  2) for BLAS and TensorFlow.
+
+## Hardware and device (CUDA vs. CPU)
+
+TensorFlow uses a visible CUDA GPU automatically and otherwise falls back to
+the CPU. The outputs in this repository were produced on CPU. To force CPU,
+set `CUDA_VISIBLE_DEVICES=""`. GPU use needs a TensorFlow build that matches
+the installed CUDA driver; `uv.lock` does not provide one. The networks are
+small (p ≤ 100, n = 500), so a GPU gives little speed-up. The slowest step is
+the L1-logistic warm start, which runs on the CPU and is cached.
+
+## Repository layout
+
+```text
+src/causal_embedding/      importable package (models, DGPs, utilities); see INSTALL.md
+scripts/                   run_simulation.py, make_paper_tables.py, exploration/ (historical scripts)
+experiments/               run_main.sh, run_research_notes.sh, run_exploration.sh, clivio/ (R pipeline)
+configs/                   default.yaml (pipeline + criteria), experiments/<dataset>.yaml, experiments/ablations/
+outputs/                   results/, tables/ (generated; no code)
+work-journal.tex           design rationale (git-ignored)    research-notes/  A-vs-B notes (git-ignored)
+```

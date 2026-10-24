@@ -1,0 +1,10 @@
+name: A04_propensity_rank
+note: research-notes/A04_propensity_rank.md
+question: >-
+  Rank of W_A in the BCE propensity network (beta_hat = top eigenvector of H_A);
+  everything else fixed.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  r1: {treatment: {rank: 1}}
+  r2: {treatment: {rank: 2}}
+  r5: {treatment: {rank: 5}}

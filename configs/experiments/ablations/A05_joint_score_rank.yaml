@@ -1,0 +1,10 @@
+name: A05_joint_score_rank
+note: research-notes/A05_joint_score_rank.md
+question: >-
+  Rank r' of the joint-score bottleneck W_v (extra columns start Gaussian);
+  everything else fixed.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  r1: {joint: {rank: 1}}
+  r2: {joint: {rank: 2}}
+  r3: {joint: {rank: 3}}

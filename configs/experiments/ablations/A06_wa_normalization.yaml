@@ -1,0 +1,9 @@
+name: A06_wa_normalization
+note: research-notes/A06_wa_normalization.md
+question: >-
+  Unit-norm projection of W_A after every BCE step vs unconstrained W_A
+  (L2 penalty only); everything else fixed.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  unit_norm: {treatment: {normalize: true}}
+  none: {treatment: {normalize: false}}

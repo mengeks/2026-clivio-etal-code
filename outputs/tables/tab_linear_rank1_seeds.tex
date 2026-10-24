@@ -1,0 +1,21 @@
+\begin{table}[h]
+\centering
+\caption{Per-seed $\cos^2$ between estimated and true directions, linear rank-one model. Source: \texttt{outputs/results/linear\_rank1/results.csv}.}
+\label{tab:linear_rank1_seeds}
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+ & \multicolumn{2}{c}{Score ratio} & \multicolumn{2}{c}{SAVE} & \multicolumn{2}{c}{SIR} & \multicolumn{2}{c}{LASSO}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Seed & $\hat\beta$ & $\hat\alpha$ & $\hat\beta$ & $\hat\alpha$ & $\hat\beta$ & $\hat\alpha$ & $\hat\beta$ & $\hat\alpha$\\
+\midrule
+1 & 0.787 & 0.831 & 0.004 & 0.001 & 0.722 & 0.524 & 0.888 & 0.987\\
+2 & 0.767 & 0.954 & 0.094 & 0.000 & 0.680 & 0.555 & 0.909 & 0.990\\
+3 & 0.818 & 0.932 & 0.001 & 0.000 & 0.716 & 0.626 & 0.914 & 0.989\\
+4 & 0.797 & 0.888 & 0.000 & 0.000 & 0.744 & 0.612 & 0.915 & 0.992\\
+5 & 0.785 & 0.982 & 0.185 & 0.001 & 0.783 & 0.542 & 0.913 & 0.986\\
+\midrule
+Median & 0.787 & 0.932 & 0.004 & 0.000 & 0.722 & 0.555 & 0.913 & 0.989\\
+\bottomrule
+\end{tabular}
+\end{table}

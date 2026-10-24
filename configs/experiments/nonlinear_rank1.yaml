@@ -1,0 +1,16 @@
+# Experiment 2: quadratic single-index DGP (linear methods fail by symmetry).
+#   Y(0) = (alpha'V)^2 + eps,  eps ~ N(0, noise^2),  logit e(V) = s_T[(beta'V)^2 - 1]
+name: nonlinear_rank1
+dgp:
+  family: rank1
+  p: 30
+  n: 500
+  q_alpha: 5           # active coordinates of alpha (beta is dense)
+  s_T: 1.5
+  noise: 0.5
+  ab_dp: 0.75
+  direction_seed: 0
+seeds: [1, 2, 3, 4, 5]
+overrides:
+  baselines:
+    lasso: {lasso_max_iter: 2000, logistic_max_iter: 2000, random_state: null, zero_fallback: true}

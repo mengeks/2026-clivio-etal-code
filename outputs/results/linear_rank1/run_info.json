@@ -1,0 +1,163 @@
+{
+ "name": "linear_rank1",
+ "spec": {
+  "name": "linear_rank1",
+  "dgp": {
+   "family": "linear",
+   "p": 100,
+   "n": 500,
+   "q_alpha": 20,
+   "s_T": 4.0,
+   "s_Y": 5.0,
+   "ab_dp": 0.75,
+   "direction_seed": 0
+  },
+  "seeds": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "overrides": {
+   "init": {
+    "method": "lasso"
+   }
+  }
+ },
+ "written": "2026-10-24T06:28:37+00:00",
+ "n_rows": 5,
+ "git_revisions": [
+  "9412a5c703b35f165a70c0d4f264eb0885570d3e+dirty"
+ ],
+ "environment": {
+  "python": "3.9.13",
+  "platform": "Linux-4.18.0-553.53.1.el8_10.x86_64-x86_64-with-glibc2.28",
+  "hostname": "noah",
+  "tensorflow": "2.10.0",
+  "numpy": "1.24.2",
+  "scipy": "1.11.3",
+  "scikit-learn": "1.6.1",
+  "pandas": "2.0.1",
+  "devices": [
+   "CPU"
+  ]
+ },
+ "total_job_runtime_sec": 234.0,
+ "summary": {
+  "linear_rank1/main": {
+   "beta_sr_cos2": {
+    "median": 0.7872262827814448,
+    "min": 0.7669243467630461,
+    "max": 0.8178351864344955
+   },
+   "alpha_sr_cos2": {
+    "median": 0.9315271235032793,
+    "min": 0.8308790521702542,
+    "max": 0.9824744973100983
+   },
+   "beta_init_cos2": {
+    "median": 0.912969171606025,
+    "min": 0.8880497051365707,
+    "max": 0.9149183734902484
+   },
+   "alpha_init_cos2": {
+    "median": 0.988987611999539,
+    "min": 0.9863939598279395,
+    "max": 0.9920589140357007
+   }
+  }
+ },
+ "configs": {
+  "linear_rank1/main": {
+   "config_hash": "d4c854171ec2",
+   "config": {
+    "init": {
+     "method": "lasso"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 5000,
+      "logistic_max_iter": 1000,
+      "random_state": 0,
+      "zero_fallback": false
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "linear",
+     "p": 100,
+     "n": 500,
+     "q_alpha": 20,
+     "s_T": 4.0,
+     "s_Y": 5.0,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  }
+ }
+}

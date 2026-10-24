@@ -1,13 +1,42 @@
-neurips_2026.sty
-neurips-wmhs2026_submission-16Sep2026.tex
+# Python
 __pycache__/
 *.pyc
+*.egg-info/
+.venv/
+build/
+dist/
+
+# LaTeX build files
 *.aux
 *.log
 *.out
 *.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
 *.pdf
-results/bernoulli_run.log
-results/sr_nn_final_p100.csv
-writeup_sr_nn_experiments.tex
-writeup_sr_linear_diagnosis.tex
+!experiments/clivio/combined_plot*.pdf
+
+# Private: manuscript, work journal, research notes
+neurips_2026.sty
+neurips-wmhs2026_submission-16Sep2026.tex
+# backups: submitted manuscript, journal before the Oct 2026 edits
+neurips-wmhs2026_submission-16Sep2026.submitted.tex
+work-journal.tex
+work-journal.before-reorg.tex
+research-notes/
+
+# Outputs: job cache, fast-path runs, logs (aggregated results and tables are tracked)
+outputs/results/_jobs/
+outputs/results/_cache/
+outputs/results/_fast/
+outputs/logs/
+# historical files that were never tracked
+outputs/results/legacy/bernoulli_run.log
+outputs/results/legacy/sr_nn_final_p100.csv
+
+# Clivio R pipeline scratch file
+experiments/clivio/param_combos.txt
+
+# Local Claude Code permissions
+.claude/settings.local.json

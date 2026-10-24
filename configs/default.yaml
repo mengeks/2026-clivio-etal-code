@@ -1,0 +1,87 @@
+# Base configuration of the score-ratio pipeline (paper settings).
+#
+# Design choices are tagged with their research note, research-notes/A<nn>_*.md
+# (A-vs-B evidence). Rationale summary: work-journal.tex, "Design decisions".
+# DGP settings and per-dataset overrides: configs/experiments/<dataset>.yaml.
+# Ablation arms: configs/experiments/ablations/A<nn>_*.yaml.
+#
+# RNG scheme for data seed k: data ~ numpy default_rng(k); global NumPy and
+# TensorFlow seeds = k at the start of each run; validation splits
+# default_rng(k + 999) (propensity) and default_rng(k + 888) (joint score);
+# random warm start default_rng(k + 7777); extra bottleneck columns
+# default_rng(k + 5555).
+
+pipeline:
+  init:
+    method: save            # A03  save | lasso | random | oracle (reference only, uses the truth)
+
+  treatment:                # treatment score w_A -> beta_hat (leading eigenvector of H_A)
+    objective: bce          # A01  bce (propensity network) | ism (score network)
+    rank: 1                 # A04  columns of W_A
+    normalize: true         # A06  unit norm (rank 1) / orthonormal columns after every step
+    hidden: [8]             # A08  tanh hidden layers of the inner MLP h ([] = linear h)
+    bce:
+      lr: 1.0e-3            # Adam
+      l2: 1.0e-3            # L2 on all propensity weights
+      max_epochs: 600
+      patience: 40          # early stopping on validation BCE
+      val_frac: 0.2
+      batch_size: 64
+      clip_norm: 1.0        # per-gradient clip norm
+    ism:                    # used only when objective = ism (A01 comparison arm)
+      hidden: [16, 16]
+      lr: 3.0e-3
+      lam2: 0.0             # no nuclear norm on the 1x1 W_obs (rescue fix F3)
+      lam_l2: 1.0e-3
+      max_epochs: 600
+      patience: 40
+      val_frac: 0.2
+      clip_norm: 1.0
+      trace: exact_qr
+      n_hutch: 4
+
+  joint:                    # joint score w_AY (ISM, full batch)
+    rank: 2                 # A05  columns of W_v; initialised to orth[beta_0, alpha_0]
+    stiefel: true           #      orthonormal W_v after every step (no A-vs-B evidence)
+    trace: exact_qr         # A10  exact_qr | hutchinson
+    n_hutch: 4              #      probes per sample when trace = hutchinson
+    s_prime: 2              # rank of W_obs for the (A, Y) observations
+    hidden: [16, 16]        # tanh inner MLP psi
+    lam1: 0.0               # nuclear norm on W_v (Stiefel projection replaces it)
+    lam2: 1.0e-2            # nuclear norm on W_obs
+    lam_l2: 1.0e-3          # L2 on psi weights
+    lr: 3.0e-3
+    max_epochs: 600
+    patience: 40            # early stopping on validation ISM loss
+    val_frac: 0.2
+    clip_norm: 1.0
+
+  h0:
+    construction: per_sample   # A09  per_sample | difference_ctrl | difference_all
+
+  baselines:                # classical estimators; SAVE and LASSO double as warm starts
+    n_slices_a: 2           # SAVE/SIR slices for binary A (one per class)
+    n_slices_y: 3           # equal-frequency SAVE/SIR slices for Y (controls)
+    lasso:                  # LassoCV (alpha, controls) + L1-logistic (beta), cv = 5
+      lasso_max_iter: 5000
+      logistic_max_iter: 1000
+      random_state: 0
+      zero_fallback: false  # replace an all-zero coefficient vector by a fixed random one
+
+  diagnostics:
+    trace_spread: true      # A10  exact vs repeated Hutchinson trace at the fitted joint net
+    n_hutch: [4, 8]
+    n_rep: 100
+
+# Success criteria (squared cosines over the seeds of each dataset).
+evaluation:
+  linear_rank1:
+    median_beta: 0.80
+    median_alpha: 0.80
+    floor: 0.70             # per-seed floor for both directions
+    min_seeds_above_floor: 4
+  nonlinear_rank1:
+    median_beta: 0.70
+    median_alpha: 0.80
+    floor: 0.50
+    min_seeds_above_floor: 5

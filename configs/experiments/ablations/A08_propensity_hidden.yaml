@@ -1,0 +1,7 @@
+name: A08_propensity_hidden
+note: research-notes/A08_propensity_hidden.md
+question: Hidden layers of the propensity inner MLP h, (8,) tanh vs linear h.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  hidden_8: {treatment: {hidden: [8]}}
+  linear: {treatment: {hidden: []}}

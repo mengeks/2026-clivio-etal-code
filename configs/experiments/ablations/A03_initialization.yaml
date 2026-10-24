@@ -1,0 +1,11 @@
+name: A03_initialization
+note: research-notes/A03_initialization.md
+question: >-
+  Warm start of (alpha_0, beta_0) for the propensity and joint-score networks.
+  oracle uses the true directions and is a reference only.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  save: {init: {method: save}}
+  lasso: {init: {method: lasso}}
+  random: {init: {method: random}}
+  oracle: {init: {method: oracle}}

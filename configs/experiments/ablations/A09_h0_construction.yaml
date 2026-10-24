@@ -1,0 +1,9 @@
+name: A09_h0_construction
+note: research-notes/A09_h0_construction.md
+question: >-
+  H_0 from per-sample differences d_i = w_AY - w_A vs differences of
+  second-moment matrices. All three readouts come from the same fitted
+  networks (columns h0_<construction>_*), so one arm suffices.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  main: {}

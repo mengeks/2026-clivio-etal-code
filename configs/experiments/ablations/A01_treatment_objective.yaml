@@ -1,0 +1,9 @@
+name: A01_treatment_objective
+note: research-notes/A01_treatment_objective.md
+question: >-
+  BCE propensity network vs ISM treatment-score network for w_A, with the same
+  rank (1), warm start, W_A projection and joint-score stage.
+datasets: [linear_rank1, nonlinear_rank1]
+arms:
+  bce: {treatment: {objective: bce}}
+  ism: {treatment: {objective: ism}}

@@ -1,0 +1,15 @@
+# Experiment 1: sparse linear single-index DGP (Clivio et al. 2026, setting 4).
+#   V ~ N(0, I_p),  A | V ~ Bern(sigmoid(s_T V'beta)),  Y = s_Y V'alpha + N(0, 1)
+name: linear_rank1
+dgp:
+  family: linear
+  p: 100
+  n: 500
+  q_alpha: 20          # active coordinates of alpha (beta shares the support)
+  s_T: 4.0             # propensity scale
+  s_Y: 5.0             # outcome scale
+  ab_dp: 0.75          # alpha'beta
+  direction_seed: 0    # fixed true directions
+seeds: [1, 2, 3, 4, 5]
+overrides:
+  init: {method: lasso}   # A03: SAVE warm start fails on this DGP (see research-notes/A03_initialization.md)

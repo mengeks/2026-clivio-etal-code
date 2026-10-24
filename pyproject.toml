@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "causal-embedding"
+version = "0.1.0"
+description = "Score-ratio prognostic dimension reduction for causal inference"
+readme = "INSTALL.md"
+authors = [{ name = "Xiang Meng" }]
+requires-python = ">=3.9,<3.11"
+dependencies = [
+    "numpy>=1.22,<2",
+    "scipy>=1.8",
+    "scikit-learn>=1.1",
+    "pandas>=1.4",
+    "pyyaml>=6.0",
+    "tensorflow>=2.10,<2.16",   # tf.keras (Keras 2) API; tested with 2.10.0
+]
+
+[project.urls]
+Repository = "https://github.com/mengeks/causal-embedding"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+causal_embedding = ["default.yaml"]
+
+[tool.uv]
+# Lock the versions that produced outputs/ (Python 3.9.13, CPU); pip installs
+# from the ranges above.
+constraint-dependencies = [
+    "tensorflow==2.10.0",
+    "numpy==1.24.2",
+    "scipy==1.11.3",
+    "scikit-learn==1.6.1",
+    "pandas==2.0.1",
+    "pyyaml==6.0",
+]

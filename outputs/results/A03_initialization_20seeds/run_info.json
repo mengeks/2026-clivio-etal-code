@@ -1,0 +1,953 @@
+{
+ "name": "A03_initialization",
+ "spec": {
+  "name": "A03_initialization",
+  "note": "research-notes/A03_initialization.md",
+  "question": "Warm start of (alpha_0, beta_0) for the propensity and joint-score networks. oracle uses the true directions and is a reference only.",
+  "datasets": [
+   "linear_rank1",
+   "nonlinear_rank1"
+  ],
+  "arms": {
+   "save": {
+    "init": {
+     "method": "save"
+    }
+   },
+   "lasso": {
+    "init": {
+     "method": "lasso"
+    }
+   },
+   "random": {
+    "init": {
+     "method": "random"
+    }
+   },
+   "oracle": {
+    "init": {
+     "method": "oracle"
+    }
+   }
+  }
+ },
+ "written": "2026-10-24T06:28:24+00:00",
+ "n_rows": 160,
+ "git_revisions": [
+  "9412a5c703b35f165a70c0d4f264eb0885570d3e+dirty"
+ ],
+ "environment": {
+  "python": "3.9.13",
+  "platform": "Linux-4.18.0-553.53.1.el8_10.x86_64-x86_64-with-glibc2.28",
+  "hostname": "noah",
+  "tensorflow": "2.10.0",
+  "numpy": "1.24.2",
+  "scipy": "1.11.3",
+  "scikit-learn": "1.6.1",
+  "pandas": "2.0.1",
+  "devices": [
+   "CPU"
+  ]
+ },
+ "total_job_runtime_sec": 5982.8,
+ "summary": {
+  "linear_rank1/save": {
+   "beta_sr_cos2": {
+    "median": 0.7495424230195556,
+    "min": 0.6614346643066628,
+    "max": 0.7894757035900424
+   },
+   "alpha_sr_cos2": {
+    "median": 0.4327010911581102,
+    "min": 0.2626230217482058,
+    "max": 0.9684060961462058
+   },
+   "beta_init_cos2": {
+    "median": 0.0025192991432811656,
+    "min": 0.0,
+    "max": 0.18532354194177617
+   },
+   "alpha_init_cos2": {
+    "median": 0.0004231854625056412,
+    "min": 4.251416537367726e-07,
+    "max": 0.06989192382635093
+   }
+  },
+  "linear_rank1/lasso": {
+   "beta_sr_cos2": {
+    "median": 0.8032800631269539,
+    "min": 0.7428011522611058,
+    "max": 0.8395526514591253
+   },
+   "alpha_sr_cos2": {
+    "median": 0.915948494805044,
+    "min": 0.7915818979655698,
+    "max": 0.9824744973100983
+   },
+   "beta_init_cos2": {
+    "median": 0.9103300658407314,
+    "min": 0.8880497051365707,
+    "max": 0.9315181222019796
+   },
+   "alpha_init_cos2": {
+    "median": 0.9891640164001892,
+    "min": 0.9844392987726773,
+    "max": 0.9930016355060072
+   }
+  },
+  "linear_rank1/random": {
+   "beta_sr_cos2": {
+    "median": 0.7457727060216697,
+    "min": 0.4531992146263691,
+    "max": 0.8056238963382434
+   },
+   "alpha_sr_cos2": {
+    "median": 0.46379110611083385,
+    "min": 0.2488117962957495,
+    "max": 0.9580968563290818
+   },
+   "beta_init_cos2": {
+    "median": 0.005090838819989792,
+    "min": 7.97780772665323e-06,
+    "max": 0.03543433751833504
+   },
+   "alpha_init_cos2": {
+    "median": 0.004895307932780951,
+    "min": 0.00015410985816904246,
+    "max": 0.0490279729550865
+   }
+  },
+  "linear_rank1/oracle": {
+   "beta_sr_cos2": {
+    "median": 0.8112528109040191,
+    "min": 0.7555379811302295,
+    "max": 0.88190275136295
+   },
+   "alpha_sr_cos2": {
+    "median": 0.8512494855244025,
+    "min": 0.5085731266469095,
+    "max": 0.9782182864900711
+   },
+   "beta_init_cos2": {
+    "median": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "alpha_init_cos2": {
+    "median": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   }
+  },
+  "nonlinear_rank1/save": {
+   "beta_sr_cos2": {
+    "median": 0.8616255443005032,
+    "min": 0.5195898372245173,
+    "max": 0.9209920971693936
+   },
+   "alpha_sr_cos2": {
+    "median": 0.9548904475223878,
+    "min": 0.021396318922411364,
+    "max": 0.9804027993110704
+   },
+   "beta_init_cos2": {
+    "median": 0.8108739795318903,
+    "min": 0.5097369237903692,
+    "max": 0.9447265940821662
+   },
+   "alpha_init_cos2": {
+    "median": 0.49709741863734647,
+    "min": 0.002735699277473694,
+    "max": 0.8300310635400451
+   }
+  },
+  "nonlinear_rank1/lasso": {
+   "beta_sr_cos2": {
+    "median": 0.0011179205241292507,
+    "min": 5.197159218464739e-05,
+    "max": 0.015714964267191434
+   },
+   "alpha_sr_cos2": {
+    "median": 0.12913464580556422,
+    "min": 1.3141947618201896e-06,
+    "max": 0.9860961389053552
+   },
+   "beta_init_cos2": {
+    "median": 0.0007381936062782518,
+    "min": 0.00017225076325979685,
+    "max": 0.005340335578947725
+   },
+   "alpha_init_cos2": {
+    "median": 0.24968497843818457,
+    "min": 0.0,
+    "max": 0.9254537928271549
+   }
+  },
+  "nonlinear_rank1/random": {
+   "beta_sr_cos2": {
+    "median": 0.036590976657939624,
+    "min": 8.497370503312147e-05,
+    "max": 0.8911215894296842
+   },
+   "alpha_sr_cos2": {
+    "median": 0.03140814784860477,
+    "min": 5.814201257167137e-05,
+    "max": 0.47090187283079893
+   },
+   "beta_init_cos2": {
+    "median": 0.02700586236284979,
+    "min": 0.00042176552327803104,
+    "max": 0.1440331607253355
+   },
+   "alpha_init_cos2": {
+    "median": 0.010921806348626367,
+    "min": 0.00011561865799338381,
+    "max": 0.08587186938883556
+   }
+  },
+  "nonlinear_rank1/oracle": {
+   "beta_sr_cos2": {
+    "median": 0.9018423497243946,
+    "min": 0.7850778733655788,
+    "max": 0.9997281565922532
+   },
+   "alpha_sr_cos2": {
+    "median": 0.9583334408531382,
+    "min": 0.8826249749427738,
+    "max": 0.9858423716728522
+   },
+   "beta_init_cos2": {
+    "median": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "alpha_init_cos2": {
+    "median": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   }
+  }
+ },
+ "configs": {
+  "linear_rank1/save": {
+   "config_hash": "f9207f4d06b4",
+   "config": {
+    "init": {
+     "method": "save"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 5000,
+      "logistic_max_iter": 1000,
+      "random_state": 0,
+      "zero_fallback": false
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "linear",
+     "p": 100,
+     "n": 500,
+     "q_alpha": 20,
+     "s_T": 4.0,
+     "s_Y": 5.0,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "linear_rank1/lasso": {
+   "config_hash": "d4c854171ec2",
+   "config": {
+    "init": {
+     "method": "lasso"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 5000,
+      "logistic_max_iter": 1000,
+      "random_state": 0,
+      "zero_fallback": false
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "linear",
+     "p": 100,
+     "n": 500,
+     "q_alpha": 20,
+     "s_T": 4.0,
+     "s_Y": 5.0,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "linear_rank1/random": {
+   "config_hash": "3a71499b0f28",
+   "config": {
+    "init": {
+     "method": "random"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 5000,
+      "logistic_max_iter": 1000,
+      "random_state": 0,
+      "zero_fallback": false
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "linear",
+     "p": 100,
+     "n": 500,
+     "q_alpha": 20,
+     "s_T": 4.0,
+     "s_Y": 5.0,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "linear_rank1/oracle": {
+   "config_hash": "027cde791284",
+   "config": {
+    "init": {
+     "method": "oracle"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 5000,
+      "logistic_max_iter": 1000,
+      "random_state": 0,
+      "zero_fallback": false
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "linear",
+     "p": 100,
+     "n": 500,
+     "q_alpha": 20,
+     "s_T": 4.0,
+     "s_Y": 5.0,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "nonlinear_rank1/save": {
+   "config_hash": "f04d6843d3a4",
+   "config": {
+    "init": {
+     "method": "save"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 2000,
+      "logistic_max_iter": 2000,
+      "random_state": null,
+      "zero_fallback": true
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "rank1",
+     "p": 30,
+     "n": 500,
+     "q_alpha": 5,
+     "s_T": 1.5,
+     "noise": 0.5,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "nonlinear_rank1/lasso": {
+   "config_hash": "49cee8f7798b",
+   "config": {
+    "init": {
+     "method": "lasso"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 2000,
+      "logistic_max_iter": 2000,
+      "random_state": null,
+      "zero_fallback": true
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "rank1",
+     "p": 30,
+     "n": 500,
+     "q_alpha": 5,
+     "s_T": 1.5,
+     "noise": 0.5,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "nonlinear_rank1/random": {
+   "config_hash": "04781ceddef9",
+   "config": {
+    "init": {
+     "method": "random"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 2000,
+      "logistic_max_iter": 2000,
+      "random_state": null,
+      "zero_fallback": true
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "rank1",
+     "p": 30,
+     "n": 500,
+     "q_alpha": 5,
+     "s_T": 1.5,
+     "noise": 0.5,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  },
+  "nonlinear_rank1/oracle": {
+   "config_hash": "bce9a13ddeb9",
+   "config": {
+    "init": {
+     "method": "oracle"
+    },
+    "treatment": {
+     "objective": "bce",
+     "rank": 1,
+     "normalize": true,
+     "hidden": [
+      8
+     ],
+     "bce": {
+      "lr": 0.001,
+      "l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "batch_size": 64,
+      "clip_norm": 1.0
+     },
+     "ism": {
+      "hidden": [
+       16,
+       16
+      ],
+      "lr": 0.003,
+      "lam2": 0.0,
+      "lam_l2": 0.001,
+      "max_epochs": 600,
+      "patience": 40,
+      "val_frac": 0.2,
+      "clip_norm": 1.0,
+      "trace": "exact_qr",
+      "n_hutch": 4
+     }
+    },
+    "joint": {
+     "rank": 2,
+     "stiefel": true,
+     "trace": "exact_qr",
+     "n_hutch": 4,
+     "s_prime": 2,
+     "hidden": [
+      16,
+      16
+     ],
+     "lam1": 0.0,
+     "lam2": 0.01,
+     "lam_l2": 0.001,
+     "lr": 0.003,
+     "max_epochs": 600,
+     "patience": 40,
+     "val_frac": 0.2,
+     "clip_norm": 1.0
+    },
+    "h0": {
+     "construction": "per_sample"
+    },
+    "baselines": {
+     "n_slices_a": 2,
+     "n_slices_y": 3,
+     "lasso": {
+      "lasso_max_iter": 2000,
+      "logistic_max_iter": 2000,
+      "random_state": null,
+      "zero_fallback": true
+     }
+    },
+    "diagnostics": {
+     "trace_spread": true,
+     "n_hutch": [
+      4,
+      8
+     ],
+     "n_rep": 100
+    },
+    "dgp": {
+     "family": "rank1",
+     "p": 30,
+     "n": 500,
+     "q_alpha": 5,
+     "s_T": 1.5,
+     "noise": 0.5,
+     "ab_dp": 0.75,
+     "direction_seed": 0
+    }
+   }
+  }
+ }
+}
